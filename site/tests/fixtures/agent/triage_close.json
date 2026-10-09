@@ -1,0 +1,20 @@
+{
+  "schema_version": "2",
+  "ticket_number": "TKT-FIXTURE",
+  "phase": "triage",
+  "resolution": "close_admin_task",
+  "service_request": {
+    "service": "close_ticket",
+    "params": {}
+  },
+  "confidence": 0.91,
+  "summary": "Demande admin",
+  "client_reply_draft": "Bonjour, nous traitons votre demande.",
+  "internal_note": "Back-office",
+  "project_detection": {
+    "project_key": "client-site",
+    "domain": "client.fr",
+    "confidence": 0.6,
+    "reason": "Fixture test"
+  }
+}

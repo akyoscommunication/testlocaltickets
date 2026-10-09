@@ -1,0 +1,89 @@
+{% set totalPages = this.totalPages %}
+{% set totalCount = this.totalCount %}
+<div{{ attributes.defaults({ 'data-poll': 'delay(3000)|$render' }) }} class="space-y-3">
+    <div class="flex flex-wrap gap-3 items-end justify-between">
+        <div class="flex-1 min-w-[12rem]">
+            <label class="block text-xs font-medium text-gray-600 mb-1">Filtrer par ticket</label>
+            <input type="text" data-model="ticketFilter" placeholder="T-XXXX" class="w-full border rounded-md px-3 py-1.5 text-sm font-mono" value="{{ ticketFilter ?? '' }}">
+        </div>
+        <p class="text-xs text-gray-500 pb-1.5">
+            <span class="inline-flex items-center gap-1.5">
+                <span class="relative flex h-2 w-2">
+                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                </span>
+                Actualisation auto (3 s)
+            </span>
+            · {{ totalCount }} entrée{{ totalCount > 1 ? 's' : '' }}
+        </p>
+    </div>
+    <div class="overflow-hidden rounded-lg border">
+        <table class="w-full text-xs">
+            <thead class="bg-gray-50 border-b">
+                <tr class="text-left">
+                    <th class="px-3 py-2">Heure <span class="font-normal text-gray-400">(récent → ancien)</span></th>
+                    <th class="px-3 py-2">Ticket</th>
+                    <th class="px-3 py-2">Niveau</th>
+                    <th class="px-3 py-2">Message</th>
+                    <th class="px-3 py-2">Run</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in this.logs %}
+                <tr class="border-b border-gray-100">
+                    <td class="px-3 py-2 whitespace-nowrap text-gray-500 font-mono text-[11px]">{{ log.createdAt|date('Y-m-d H:i:s') }}</td>
+                    <td class="px-3 py-2 font-mono">{{ log.ticketNumber ?? '—' }}</td>
+                    <td class="px-3 py-2"><span class="rounded px-1.5 py-0.5 {{ log.level == 'error' ? 'bg-red-100 text-red-800' : 'bg-slate-100' }}">{{ log.level }}</span></td>
+                    <td class="px-3 py-2 max-w-2xl">
+                        <div class="{{ log.level == 'error' ? 'text-red-900' : '' }}">{{ log.message }}</div>
+                        {% set ctx = log.context %}
+                        {% if ctx %}
+                            {% set stderr = ctx.stderr_tail ?? ctx.stderr ?? null %}
+                            {% if stderr %}
+                                <details class="mt-1.5 text-[10px] text-gray-600">
+                                    <summary class="cursor-pointer select-none hover:text-gray-900">stderr (fin)</summary>
+                                    <pre class="mt-1 max-h-48 overflow-auto whitespace-pre-wrap break-words rounded bg-gray-50 p-2 font-mono text-[10px]">{{ stderr }}</pre>
+                                </details>
+                            {% endif %}
+                            {% if ctx.exit_code is defined or ctx.codex_stderr_log is defined %}
+                                <p class="mt-1 text-[10px] text-gray-500 font-mono">
+                                    {% if ctx.exit_code is defined %}exit {{ ctx.exit_code }}{% endif %}
+                                    {% if ctx.codex_stderr_log is defined %} · {{ ctx.codex_stderr_log }}{% endif %}
+                                    {% if ctx.stderr_log is defined %} · {{ ctx.stderr_log }}{% endif %}
+                                </p>
+                            {% endif %}
+                        {% endif %}
+                    </td>
+                    <td class="px-3 py-2 font-mono text-[10px] text-gray-400">{{ log.runId ?? '—' }}</td>
+                </tr>
+                {% else %}
+                <tr><td colspan="5" class="px-3 py-6 text-center text-gray-500">Aucun log.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% if totalCount > 0 %}
+        <nav class="flex w-full justify-between items-center" role="navigation">
+            <span class="text-sm text-muted-foreground">Page {{ page }} / {{ totalPages }}</span>
+            <div class="flex items-center gap-1">
+                {% if page <= 1 %}
+                    <twig:Pagination:Previous disabled />
+                {% else %}
+                    <twig:Pagination:Previous
+                        data-action="live#action"
+                        data-live-action-param="previousPage"
+                    />
+                {% endif %}
+                <twig:Pagination:Link :active="true">{{ page }}</twig:Pagination:Link>
+                {% if page >= totalPages %}
+                    <twig:Pagination:Next disabled />
+                {% else %}
+                    <twig:Pagination:Next
+                        data-action="live#action"
+                        data-live-action-param="nextPage"
+                    />
+                {% endif %}
+            </div>
+        </nav>
+    {% endif %}
+</div>

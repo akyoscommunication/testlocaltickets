@@ -1,0 +1,142 @@
+<div{{ attributes }}>
+    {% set ticket = this.ticket %}
+    {% if ticket is null %}
+        <twig:Alert variant="destructive">
+            <twig:Alert:Title>Erreur</twig:Alert:Title>
+            <twig:Alert:Description>Ticket introuvable.</twig:Alert:Description>
+        </twig:Alert>
+    {% else %}
+        {% set tabs = this.tabs %}
+        {% set ticketFilePaths = this.ticketFilePaths %}
+        {% if flashMessage %}
+            <twig:Alert variant="{{ flashType == 'success' ? 'default' : 'destructive' }}" class="mb-4">
+                <twig:Alert:Description>{{ flashMessage }}</twig:Alert:Description>
+            </twig:Alert>
+        {% endif %}
+
+        <div class="rounded-lg border bg-card text-card-foreground shadow-sm mb-6 p-6">
+            <h1 class="text-2xl font-semibold font-mono">{{ ticket.ticketNumber }}</h1>
+            <p class="text-sm text-muted-foreground mt-2 flex flex-wrap items-center gap-2">
+                {{ ticket.inputSource }}
+                <twig:Badge variant="secondary">{{ ticket.status }}</twig:Badge>
+                {% set ha = (ticket.analysisSummary ?? {}).human_action ?? null %}
+                {% if ticket.status == 'waiting_for_human' and ha and ha != 'none' %}
+                    {% set haLabel = this.humanActionLabel(ha) %}
+                    <twig:Badge variant="outline">{{ haLabel }}</twig:Badge>
+                {% endif %}
+                <span>· boucle {{ ticket.loopCount }}/{{ this.maxLoops }}</span>
+                {% if this.serviceExecutionCount > 0 %}
+                    <span>· {{ this.serviceExecutionCount }} service(s)</span>
+                {% endif %}
+                {% if ticket.resolvedProjectKey %}<span>· projet <code>{{ ticket.resolvedProjectKey }}</code></span>{% endif %}
+            </p>
+        </div>
+
+        <twig:ResolveProjectLiveComponent ticketNumber="{{ ticketNumber }}" />
+
+        <div class="mb-4 flex w-full flex-wrap justify-start gap-1" role="tablist">
+            {% for tab in tabs %}
+                <button
+                    type="button"
+                    role="tab"
+                    class="gap-1.5 rounded-md border border-transparent px-3 py-1.5 text-sm font-medium transition-all {{ activeTab == tab ? 'bg-background text-foreground shadow-sm border-border' : 'text-muted-foreground hover:text-foreground' }}"
+                    data-action="live#action"
+                    data-live-action-param="switchTab"
+                    data-live-tab-param="{{ tab }}"
+                    aria-selected="{{ activeTab == tab ? 'true' : 'false' }}"
+                >
+                    {{ tab|capitalize }}
+                </button>
+            {% endfor %}
+        </div>
+
+        <div class="rounded-lg border bg-card text-card-foreground shadow-sm p-6 min-h-[200px]">
+            {% if activeTab == 'mail' %}
+                {% set payload = ticket.payload %}
+                <h2 class="font-semibold mb-2">Mail / payload</h2>
+                <p class="text-sm"><strong>Sujet :</strong> {{ payload.subject ?? '—' }}</p>
+                <pre class="mt-3 text-sm bg-muted rounded-md p-3 whitespace-pre-wrap max-h-96 overflow-auto">{{ payload.body ?? '' }}</pre>
+            {% elseif activeTab == 'prompts' %}
+                <h2 class="font-semibold mb-3">Prompts &amp; IA</h2>
+                <twig:AgentRunTimelineLiveComponent ticketNumber="{{ ticketNumber }}" />
+            {% elseif activeTab == 'analyse' %}
+                <h2 class="font-semibold mb-2">Synthèse</h2>
+                {% set s = ticket.analysisSummary %}
+                {% if s %}
+                    {% if (s.resolution is defined and s.resolution) or (s.service is defined and s.service) or (s.human_action|default('none') != 'none') %}
+                        <div class="mb-3 flex flex-wrap gap-2 text-xs">
+                            {% if s.resolution is defined and s.resolution %}<twig:Badge variant="secondary">resolution : {{ s.resolution }}</twig:Badge>{% endif %}
+                            {% if s.service is defined and s.service %}<twig:Badge variant="secondary">service : {{ s.service }}</twig:Badge>{% endif %}
+                            {% if s.human_action|default('none') != 'none' %}
+                                {% set haLabel = this.humanActionLabel(s.human_action) %}
+                                <twig:Badge variant="default">Action : {{ haLabel }}</twig:Badge>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                    <p class="text-sm mb-2"><strong>Résumé :</strong> {{ s.summary ?? '—' }}</p>
+                    <div class="mb-3" data-controller="clipboard">
+                        <div class="flex items-center justify-between gap-2 mb-1">
+                            <strong class="text-sm">Brouillon client</strong>
+                            <twig:Button type="button" variant="ghost" size="xs" data-action="clipboard#copy" data-clipboard-target="source">Copier</twig:Button>
+                        </div>
+                        <pre data-clipboard-target="source" class="text-sm bg-muted p-3 rounded-md whitespace-pre-wrap">{{ s.client_reply_draft ?? '' }}</pre>
+                    </div>
+                    <div data-controller="clipboard">
+                        <div class="flex items-center justify-between gap-2 mb-1">
+                            <strong class="text-sm">Note interne</strong>
+                            <twig:Button type="button" variant="ghost" size="xs" data-action="clipboard#copy" data-clipboard-target="source">Copier</twig:Button>
+                        </div>
+                        <p data-clipboard-target="source" class="text-sm bg-muted p-3 rounded-md">{{ s.internal_note ?? '—' }}</p>
+                    </div>
+                {% else %}
+                    <p class="text-muted-foreground text-sm">Pas encore de synthèse.</p>
+                {% endif %}
+            {% elseif activeTab == 'services' %}
+                <twig:TicketServicesLiveComponent ticketNumber="{{ ticketNumber }}" />
+            {% elseif activeTab == 'fichiers' %}
+                <h2 class="font-semibold mb-2">Fichiers ticket</h2>
+                <p class="text-sm text-muted-foreground mb-3">Sous <code>site/data/{{ ticket.ticketNumber }}/</code></p>
+                {% set paths = ticketFilePaths %}
+                {% if paths is empty %}
+                    <p class="text-sm text-muted-foreground">Aucun fichier (hors .gitkeep).</p>
+                {% else %}
+                    <ul class="text-sm font-mono space-y-2 max-h-96 overflow-auto">
+                        {% for filePath in paths %}
+                            <li class="rounded border border-border px-2 py-1 bg-muted/30 flex items-center justify-between gap-2">
+                                <span class="truncate">{{ filePath }}</span>
+                                {% if filePath matches '/\\.(png|jpe?g|gif|webp)$/i' %}
+                                    <twig:Dialog id="file-{{ loop.index }}">
+                                        <twig:Dialog:Trigger>
+                                            <twig:Button type="button" variant="ghost" size="xs">Aperçu</twig:Button>
+                                        </twig:Dialog:Trigger>
+                                        <twig:Dialog:Content>
+                                            <twig:Dialog:Header>
+                                                <twig:Dialog:Title>{{ filePath }}</twig:Dialog:Title>
+                                            </twig:Dialog:Header>
+                                            <img
+                                                src="{{ path('ticket_file', {ticketNumber: ticket.ticketNumber, path: filePath}) }}"
+                                                alt="{{ filePath }}"
+                                                class="max-h-[70vh] w-auto mx-auto rounded-md border"
+                                            />
+                                        </twig:Dialog:Content>
+                                    </twig:Dialog>
+                                {% endif %}
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+            {% elseif activeTab == 'logs' %}
+                <twig:AutomationLogLiveComponent ticketFilter="{{ ticketNumber }}" />
+            {% elseif activeTab == 'actions' %}
+                <h2 class="font-semibold mb-3">Actions</h2>
+                <div class="flex flex-wrap gap-2">
+                    <twig:Button type="button" variant="outline" data-action="live#action" data-live-action-param="relancerTriage">Relancer triage</twig:Button>
+                    <twig:Button type="button" variant="outline" data-action="live#action" data-live-action-param="relancerCode">Relancer analyse code</twig:Button>
+                    <twig:Button type="button" variant="outline" data-action="live#action" data-live-action-param="marquerIgnore">Marquer ignoré</twig:Button>
+                    <twig:Button type="button" variant="secondary" data-action="live#action" data-live-action-param="archiver">Archiver</twig:Button>
+                </div>
+                <p class="text-xs text-muted-foreground mt-4">Les actions asynchrones nécessitent <code>php bin/console messenger:consume async</code>.</p>
+            {% endif %}
+        </div>
+    {% endif %}
+</div>

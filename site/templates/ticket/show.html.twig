@@ -1,0 +1,10 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ ticketNumber }}{% endblock %}
+
+{% block body %}
+<div class="mx-auto max-w-4xl p-6">
+    <p class="mb-4"><a href="{{ path('dashboard_home') }}" class="text-blue-600 text-sm hover:underline">← Liste</a></p>
+    <twig:TicketShowLiveComponent ticketNumber="{{ ticketNumber }}" />
+</div>
+{% endblock %}

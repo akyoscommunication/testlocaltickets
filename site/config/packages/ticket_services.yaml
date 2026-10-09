@@ -1,0 +1,38 @@
+parameters:
+    ticket_services_catalog:
+        http_probe:
+            label: 'Sonde HTTP (GET)'
+            category: investigation
+            description: 'Un GET sur une URL autorisée (statut, extrait corps, liens contact).'
+            params: 'url, purpose'
+            relaunch_ia: true
+        http_probe_batch:
+            label: 'Sonde HTTP batch'
+            category: investigation
+            description: 'Jusqu’à 10 GET sur URLs autorisées (ex. échantillon sitemap).'
+            params: 'urls[], purpose'
+            relaunch_ia: true
+        clone_repository:
+            label: 'Cloner le dépôt'
+            category: code
+            description: 'Résolution projet + clone pour analyse code.'
+            params: 'project_key?'
+            relaunch_ia: false
+        request_human_action:
+            label: 'Action humaine'
+            category: workflow
+            description: 'Attente opérateur ; callback webhook si configuré.'
+            params: 'human_action, summary?'
+            relaunch_ia: false
+        close_ticket:
+            label: 'Clôturer'
+            category: workflow
+            description: 'Finalise le ticket selon la source (mail vs webhook).'
+            params: '(aucun)'
+            relaunch_ia: false
+        rerun_agent:
+            label: 'Relancer l’agent'
+            category: agent
+            description: 'Nouveau run triage ou code_analysis.'
+            params: 'phase?'
+            relaunch_ia: true

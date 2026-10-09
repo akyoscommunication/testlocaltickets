@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.akyos.ticket.scheduler</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/usr/bin/env</string>
+        <string>php</string>
+        <string>bin/console</string>
+        <string>scheduler:consume</string>
+        <string>--time-limit=3600</string>
+    </array>
+    <key>WorkingDirectory</key>
+    <string>/Users/thomas/Desktop/ticket/site</string>
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>APP_ENV</key>
+        <string>dev</string>
+    </dict>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <true/>
+    <key>StandardOutPath</key>
+    <string>/Users/thomas/Desktop/ticket/site/var/log/scheduler-worker.log</string>
+    <key>StandardErrorPath</key>
+    <string>/Users/thomas/Desktop/ticket/site/var/log/scheduler-worker.err.log</string>
+</dict>
+</plist>

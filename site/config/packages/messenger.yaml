@@ -1,0 +1,41 @@
+framework:
+    messenger:
+        failure_transport: failed
+
+        transports:
+            # https://symfony.com/doc/current/messenger.html#transport-configuration
+            async:
+                dsn: '%env(MESSENGER_TRANSPORT_DSN)%'
+                retry_strategy:
+                    max_retries: 3
+                    multiplier: 2
+            failed: 'doctrine://default?queue_name=failed'
+            sync: 'sync://'
+
+        default_bus: messenger.bus.default
+
+        buses:
+            messenger.bus.default: []
+
+        routing:
+            Symfony\Component\Mailer\Messenger\SendEmailMessage: async
+            Symfony\Component\Notifier\Message\ChatMessage: async
+            Symfony\Component\Notifier\Message\SmsMessage: async
+
+            'App\Message\IngestTicketMessage': async
+            'App\Message\RunTriageAgentMessage': async
+            'App\Message\RunCodeAgentMessage': async
+            # Traité tout de suite après l’agent (évite la file async bloquée par les runs Codex longs).
+            'App\Message\ProcessFileOutcomeMessage': sync
+            'App\Message\ResolveProjectMessage': async
+            'App\Message\ExecuteCloneRepoMessage': async
+            'App\Message\ExecuteCloseActionsMessage': async
+            'App\Message\WatchPendingFilesMessage': async
+            'App\Message\PollImapMessage': async
+            'App\Message\CleanupWorkspacesMessage': async
+
+when@test:
+    framework:
+        messenger:
+            transports:
+                async: 'sync://'

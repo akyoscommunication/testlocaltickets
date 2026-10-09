@@ -1,0 +1,14 @@
+parameters:
+    projects:
+        client-site:
+            domains: ['client.fr', 'www.client.fr']
+            repo: 'git@gitlab.com:akyos/client-site.git'
+            default_branch: main
+        client-b2b:
+            domains: ['b2b.client.fr']
+            repo: 'git@gitlab.com:akyos/client-b2b.git'
+            default_branch: main
+        caladair:
+            domains: ['caladair.com', 'www.caladair.com']
+            repo: 'git@gitlab.com:akyos/caladair.git'
+            default_branch: main

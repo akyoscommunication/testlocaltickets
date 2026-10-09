@@ -1,0 +1,10 @@
+@import "tailwindcss";
+@import "../vendor/tw-animate-css/dist/tw-animate.css";
+@import "../vendor/shadcn/dist/tailwind.css";
+
+@source "../../templates";
+@source "../../src/Twig/Components";
+
+body {
+    @apply antialiased;
+}

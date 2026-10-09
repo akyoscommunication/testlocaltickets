@@ -1,0 +1,32 @@
+# yaml-language-server: $schema=../vendor/symfony/dependency-injection/Loader/schema/services.schema.json
+
+parameters:
+    default_agent_binary: '%kernel.project_dir%/bin/codex-ticket-run'
+
+services:
+    _defaults:
+        autowire: true
+        autoconfigure: true
+
+    App\:
+        resource: '../src/'
+        exclude:
+            - '../src/Entity/'
+            - '../src/Kernel.php'
+            - '../src/Dto/'
+
+    App\FileStorage\TicketFileStorage:
+        arguments:
+            $ticketStorage: '@ticket.storage'
+
+    App\Service\AutomationLogger:
+        arguments:
+            $ticketAgentLogger: '@monolog.logger.ticket_agent'
+
+    App\Service\TicketNumberGenerator:
+        arguments:
+            $prefix: '%env(TICKET_NUMBER_PREFIX)%'
+
+    App\Monolog\TicketContextProcessor:
+        tags:
+            - { name: monolog.processor, channel: ticket_agent }

@@ -1,0 +1,133 @@
+<div{{ attributes }}>
+    <div class="mb-6">
+        <h1 class="text-2xl font-semibold">Paramètres</h1>
+        <p class="text-sm text-muted-foreground mt-1">
+            Configuration runtime — prioritaire sur <code class="text-xs">.env</code> une fois enregistrée.
+            {% if this.updatedAt %}Dernière sauvegarde : {{ this.updatedAt }}.{% endif %}
+        </p>
+    </div>
+
+    {% if this.flashMessage %}
+        <div class="mb-4 rounded-md border px-4 py-3 text-sm {% if this.flashType == 'success' %}border-green-200 bg-green-50 text-green-900{% else %}border-blue-200 bg-blue-50 text-blue-900{% endif %}">
+            {{ this.flashMessage }}
+        </div>
+    {% endif %}
+
+    <div class="space-y-6">
+        <section class="rounded-lg border bg-card shadow-sm">
+            <header class="border-b px-4 py-3">
+                <h2 class="font-semibold">Boîte mail (IMAP)</h2>
+                <p class="text-xs text-muted-foreground mt-0.5">Poll automatique toutes les 2 min si activé (scheduler).</p>
+            </header>
+            <div class="p-4 space-y-4 text-sm">
+                <label class="flex items-center gap-2">
+                    <input type="checkbox" data-model="imapPollEnabled" class="rounded border">
+                    <span>Activer l'écoute IMAP (poll planifié)</span>
+                </label>
+                <label class="flex items-center gap-2">
+                    <input type="checkbox" data-model="imapUseFixture" class="rounded border">
+                    <span>Mode fixture (<code>var/imap-inbox/*.json</code>)</span>
+                </label>
+                <div class="grid gap-3 sm:grid-cols-2">
+                    <label class="block">
+                        <span class="text-muted-foreground">Hôte</span>
+                        <input type="text" data-model="imapHost" class="mt-1 w-full rounded border px-2 py-1.5">
+                    </label>
+                    <label class="block">
+                        <span class="text-muted-foreground">Port</span>
+                        <input type="number" data-model="imapPort" class="mt-1 w-full rounded border px-2 py-1.5">
+                    </label>
+                    <label class="block">
+                        <span class="text-muted-foreground">Utilisateur</span>
+                        <input type="text" data-model="imapUser" class="mt-1 w-full rounded border px-2 py-1.5" autocomplete="off">
+                    </label>
+                    <label class="block">
+                        <span class="text-muted-foreground">Mot de passe</span>
+                        <input type="password" data-model="imapPassword" placeholder="{{ this.imapPasswordConfigured ? '(inchangé — laisser vide)' : '' }}" class="mt-1 w-full rounded border px-2 py-1.5" autocomplete="new-password">
+                    </label>
+                    <label class="block sm:col-span-2">
+                        <span class="text-muted-foreground">Dossier</span>
+                        <input type="text" data-model="imapFolderInbox" class="mt-1 w-full rounded border px-2 py-1.5">
+                    </label>
+                </div>
+                <div class="flex flex-wrap items-center gap-3">
+                    <button type="button" class="rounded-md border px-3 py-1.5 text-sm hover:bg-muted" data-action="live#action" data-live-action-param="testImap">Tester la connexion</button>
+                    {% if this.testResultImap %}
+                        <span class="text-xs">{{ this.testResultImap }}</span>
+                    {% endif %}
+                </div>
+            </div>
+        </section>
+
+        <section class="rounded-lg border bg-card shadow-sm">
+            <header class="border-b px-4 py-3">
+                <h2 class="font-semibold">Agent IA</h2>
+                <p class="text-xs text-muted-foreground mt-0.5">Profil actif pour triage et analyse code.</p>
+            </header>
+            <div class="p-4 space-y-4 text-sm">
+                <label class="block">
+                    <span class="text-muted-foreground">Profil</span>
+                    <select data-model="agentProfile" class="mt-1 w-full rounded border px-2 py-1.5">
+                        {% for key in this.agentProfiles %}
+                            <option value="{{ key }}">{{ key }}</option>
+                        {% endfor %}
+                    </select>
+                </label>
+                <label class="block">
+                    <span class="text-muted-foreground">Binaire wrapper (<code>codex-ticket-run</code>)</span>
+                    <input type="text" data-model="agentBinary" class="mt-1 w-full rounded border px-2 py-1.5 font-mono text-xs">
+                </label>
+                <label class="block">
+                    <span class="text-muted-foreground">CLI Codex (<code>codex</code>)</span>
+                    <input type="text" data-model="agentCodexBin" class="mt-1 w-full rounded border px-2 py-1.5 font-mono text-xs">
+                </label>
+                <div class="flex flex-wrap items-center gap-3">
+                    <button type="button" class="rounded-md border px-3 py-1.5 text-sm hover:bg-muted" data-action="live#action" data-live-action-param="testAgent">Tester l'agent</button>
+                    {% if this.testResultAgent %}
+                        <span class="text-xs">{{ this.testResultAgent }}</span>
+                    {% endif %}
+                </div>
+            </div>
+        </section>
+
+        <section class="rounded-lg border bg-card shadow-sm">
+            <header class="border-b px-4 py-3">
+                <h2 class="font-semibold">Webhook ingest</h2>
+                <p class="text-xs text-muted-foreground mt-0.5">POST <code>{{ this.webhookUrl }}</code></p>
+            </header>
+            <div class="p-4 space-y-4 text-sm">
+                <label class="flex items-center gap-2">
+                    <input type="checkbox" data-model="webhookEnabled" class="rounded border">
+                    <span>Activer le webhook</span>
+                </label>
+                <label class="block">
+                    <span class="text-muted-foreground">Secret (Bearer token)</span>
+                    <input type="password" data-model="webhookSecret" placeholder="{{ this.webhookSecretConfigured ? '(inchangé — laisser vide)' : '' }}" class="mt-1 w-full rounded border px-2 py-1.5" autocomplete="new-password">
+                </label>
+                <label class="block">
+                    <span class="text-muted-foreground">IPs autorisées (optionnel, séparées par virgule)</span>
+                    <input type="text" data-model="webhookAllowedIps" placeholder="127.0.0.1, 10.0.0.0/8" class="mt-1 w-full rounded border px-2 py-1.5">
+                    <span class="text-xs text-muted-foreground">Non appliqué côté code pour l'instant — réservé usage futur.</span>
+                </label>
+                <div class="flex flex-wrap items-center gap-3">
+                    <button type="button" class="rounded-md border px-3 py-1.5 text-sm hover:bg-muted" data-action="live#action" data-live-action-param="testWebhook">Tester le webhook</button>
+                    {% if this.testResultWebhook %}
+                        <span class="text-xs">{{ this.testResultWebhook }}</span>
+                    {% endif %}
+                </div>
+                {% if this.webhookCurlExample %}
+                    <pre class="rounded bg-muted p-3 text-xs overflow-x-auto whitespace-pre-wrap">{{ this.webhookCurlExample }}</pre>
+                {% endif %}
+            </div>
+        </section>
+
+        <div class="flex flex-wrap gap-3 pt-2">
+            <button type="button" class="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90" data-action="live#action" data-live-action-param="save">
+                Enregistrer
+            </button>
+            <button type="button" class="rounded-md border px-4 py-2 text-sm hover:bg-muted" data-action="live#action" data-live-action-param="resetToEnvDefaults">
+                Réinitialiser (.env)
+            </button>
+        </div>
+    </div>
+</div>

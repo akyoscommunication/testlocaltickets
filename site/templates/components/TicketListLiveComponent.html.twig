@@ -1,0 +1,94 @@
+{% set totalPages = this.totalPages %}
+<div{{ attributes }} class="space-y-4">
+    <div class="rounded-lg border bg-card text-card-foreground shadow-sm p-4">
+        <div class="flex flex-wrap gap-3 items-end">
+            <div class="min-w-[160px]">
+                <twig:Label class="mb-1">Statut</twig:Label>
+                <select data-model="statusFilter" class="border border-input rounded-md px-2 py-1.5 text-sm w-full bg-background">
+                    <option value="">Tous</option>
+                    {% for status in this.statusChoices %}
+                        <option value="{{ status }}" {% if statusFilter == status %}selected{% endif %}>{{ status }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <twig:Label class="mb-1">Source</twig:Label>
+                <select data-model="sourceFilter" class="border border-input rounded-md px-2 py-1.5 text-sm w-full bg-background">
+                    <option value="">Toutes</option>
+                    <option value="webhook" {% if sourceFilter == 'webhook' %}selected{% endif %}>webhook</option>
+                    <option value="imap" {% if sourceFilter == 'imap' %}selected{% endif %}>imap</option>
+                </select>
+            </div>
+            <div class="min-w-[140px]">
+                <twig:Label class="mb-1">Projet</twig:Label>
+                <select data-model="projectFilter" class="border border-input rounded-md px-2 py-1.5 text-sm w-full bg-background">
+                    <option value="">Tous</option>
+                    {% for key in this.projectKeys %}
+                        <option value="{{ key }}" {% if projectFilter == key %}selected{% endif %}>{{ key }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <twig:Button type="button" variant="ghost" size="sm" data-action="live#action" data-live-action-param="resetFilters">
+                Réinitialiser
+            </twig:Button>
+        </div>
+    </div>
+
+    {% set tickets = this.tickets %}
+    {% if tickets is empty %}
+        <twig:Alert>
+            <twig:Alert:Description>Aucun ticket pour ces filtres.</twig:Alert:Description>
+        </twig:Alert>
+    {% else %}
+        <div class="rounded-lg border bg-card text-card-foreground shadow-sm overflow-hidden">
+            <twig:Table>
+                <twig:Table:Header>
+                    <twig:Table:Row>
+                        <twig:Table:Head>Numéro</twig:Table:Head>
+                        <twig:Table:Head>Source</twig:Table:Head>
+                        <twig:Table:Head>Statut</twig:Table:Head>
+                        <twig:Table:Head>Projet</twig:Table:Head>
+                        <twig:Table:Head>Mis à jour</twig:Table:Head>
+                    </twig:Table:Row>
+                </twig:Table:Header>
+                <twig:Table:Body>
+                    {% for ticket in tickets %}
+                        <twig:Table:Row>
+                            <twig:Table:Cell class="font-mono">
+                                <a href="{{ path('ticket_show', {ticketNumber: ticket.ticketNumber}) }}" class="text-primary hover:underline" data-turbo-frame="_top">{{ ticket.ticketNumber }}</a>
+                            </twig:Table:Cell>
+                            <twig:Table:Cell>{{ ticket.inputSource }}</twig:Table:Cell>
+                            <twig:Table:Cell>
+                                <twig:Badge variant="secondary">{{ ticket.status }}</twig:Badge>
+                            </twig:Table:Cell>
+                            <twig:Table:Cell>{{ ticket.resolvedProjectKey ?? '—' }}</twig:Table:Cell>
+                            <twig:Table:Cell class="text-muted-foreground">{{ ticket.updatedAt|date('Y-m-d H:i') }}</twig:Table:Cell>
+                        </twig:Table:Row>
+                    {% endfor %}
+                </twig:Table:Body>
+            </twig:Table>
+        </div>
+        <nav class="mx-auto flex w-full justify-between items-center" role="navigation">
+            <span class="text-sm text-muted-foreground">Page {{ page }} / {{ totalPages }}</span>
+            <div class="flex items-center gap-1">
+                {% if page <= 1 %}
+                    <twig:Pagination:Previous disabled />
+                {% else %}
+                    <twig:Pagination:Previous
+                        data-action="live#action"
+                        data-live-action-param="previousPage"
+                    />
+                {% endif %}
+                <twig:Pagination:Link :active="true">{{ page }}</twig:Pagination:Link>
+                {% if page >= totalPages %}
+                    <twig:Pagination:Next disabled />
+                {% else %}
+                    <twig:Pagination:Next
+                        data-action="live#action"
+                        data-live-action-param="nextPage"
+                    />
+                {% endif %}
+            </div>
+        </nav>
+    {% endif %}
+</div>

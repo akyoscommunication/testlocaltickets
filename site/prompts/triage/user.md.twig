@@ -1,0 +1,35 @@
+Ticket {{ ticket_number }}
+
+Sujet : {{ subject }}
+
+Corps :
+{{ body }}
+
+{% if sender_email is defined and sender_email %}
+Expéditeur : {{ sender_email }}
+{% endif %}
+{% if signature_text is defined and signature_text %}
+Signature :
+{{ signature_text }}
+{% endif %}
+{% if inferred_site_domain is defined and inferred_site_domain %}
+Site déduit (Symfony) : {{ inferred_site_domain }}
+{% endif %}
+{% if extracted_domains is defined and extracted_domains|length > 0 %}
+Domaines extraits : {{ extracted_domains|join(', ') }}
+{% endif %}
+
+{% if projects_catalog is defined %}
+Projets connus (clés et domaines) :
+{{ projects_catalog|json_encode(constant('JSON_PRETTY_PRINT')) }}
+{% endif %}
+
+{% if services_context is defined %}
+Contexte services exécutés :
+{{ services_context.summary_lines|default([])|join("\n") }}
+{% elseif investigation_context is defined %}
+Contexte sondes HTTP précédentes :
+{{ investigation_context.summary_lines|default([])|join("\n") }}
+{% endif %}
+
+Analyse la demande du client, propose l’action adaptée dans le JSON (phase triage). Le champ summary décrit la demande et la suite, pas les outils à ne pas lancer.

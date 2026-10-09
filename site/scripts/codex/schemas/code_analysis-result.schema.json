@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "ticket_number",
+    "phase",
+    "resolution",
+    "next_step",
+    "human_action",
+    "confidence",
+    "summary",
+    "client_reply_draft",
+    "internal_note"
+  ],
+  "properties": {
+    "schema_version": { "type": "string", "const": "1" },
+    "ticket_number": { "type": "string" },
+    "phase": { "type": "string", "const": "code_analysis" },
+    "resolution": {
+      "type": "string",
+      "enum": ["close_no_patch", "propose_patch", "needs_human", "needs_more_info"]
+    },
+    "next_step": {
+      "type": "string",
+      "enum": ["close", "wait_human", "prepare_mr", "agent_loop"]
+    },
+    "human_action": {
+      "type": "string",
+      "enum": [
+        "none",
+        "contact_client",
+        "verify_production",
+        "check_admin_backoffice",
+        "collect_server_logs",
+        "validate_project_mapping",
+        "test_form_submission"
+      ]
+    },
+    "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+    "summary": { "type": "string" },
+    "client_reply_draft": { "type": "string" },
+    "internal_note": { "type": "string" }
+  }
+}

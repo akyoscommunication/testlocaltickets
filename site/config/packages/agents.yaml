@@ -1,0 +1,14 @@
+parameters:
+    agents:
+        fixture_default:
+            runner: fixture
+            binary: ''
+            model: ''
+            timeout: 120
+            env: {}
+        codex_default:
+            runner: codex_cli
+            binary: codex
+            model: ''
+            timeout: 600
+            env: {}

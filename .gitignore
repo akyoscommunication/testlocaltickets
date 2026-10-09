@@ -1,0 +1,7 @@
+site/var/
+site/vendor/
+site/.env.local
+site/data/*/
+!site/data/.gitkeep
+site/node_modules/
+site/public/build/

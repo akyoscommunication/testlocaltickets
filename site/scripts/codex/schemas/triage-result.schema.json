@@ -1,0 +1,114 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "ticket_number",
+    "phase",
+    "resolution",
+    "service_request",
+    "confidence",
+    "summary",
+    "client_reply_draft",
+    "internal_note",
+    "project_detection"
+  ],
+  "properties": {
+    "schema_version": { "type": "string", "const": "2" },
+    "ticket_number": { "type": "string" },
+    "phase": { "type": "string", "const": "triage" },
+    "resolution": {
+      "type": "string",
+      "enum": [
+        "close_user_misuse",
+        "close_admin_task",
+        "close_content",
+        "close_commercial",
+        "close_ask_client",
+        "close_informational",
+        "needs_code",
+        "needs_human",
+        "needs_investigation"
+      ]
+    },
+    "service_request": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["service", "params"],
+      "properties": {
+        "service": {
+          "type": "string",
+          "enum": [
+            "http_probe",
+            "http_probe_batch",
+            "clone_repository",
+            "request_human_action",
+            "close_ticket",
+            "rerun_agent"
+          ]
+        },
+        "params": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "url",
+            "purpose",
+            "urls",
+            "project_key",
+            "human_action",
+            "summary",
+            "phase"
+          ],
+          "properties": {
+            "url": {
+              "type": "string",
+              "description": "http_probe : URL cible. Sinon chaîne vide."
+            },
+            "purpose": {
+              "type": "string",
+              "description": "http_probe / http_probe_batch : but de la sonde. Sinon chaîne vide."
+            },
+            "urls": {
+              "type": "array",
+              "items": { "type": "string" },
+              "description": "http_probe_batch : liste d’URLs. Sinon tableau vide []."
+            },
+            "project_key": {
+              "type": "string",
+              "description": "clone_repository : clé projet. Sinon chaîne vide."
+            },
+            "human_action": {
+              "type": "string",
+              "description": "request_human_action : test_form_submission, verify_production, collect_server_logs, check_admin_backoffice, validate_project_mapping, contact_client. Sinon chaîne vide."
+            },
+            "summary": {
+              "type": "string",
+              "description": "request_human_action : résumé pour l’opérateur. Sinon chaîne vide."
+            },
+            "phase": {
+              "type": "string",
+              "enum": ["triage", "code_analysis"],
+              "description": "rerun_agent : phase à relancer. Sinon \"triage\"."
+            }
+          }
+        }
+      }
+    },
+    "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+    "summary": { "type": "string" },
+    "client_reply_draft": { "type": "string" },
+    "internal_note": { "type": "string" },
+    "project_detection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["project_key", "domain", "confidence", "reason"],
+      "properties": {
+        "project_key": { "type": "string" },
+        "domain": { "type": "string" },
+        "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+        "reason": { "type": "string" }
+      }
+    }
+  }
+}

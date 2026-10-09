@@ -1,0 +1,20 @@
+parameters:
+    empty_string: ''
+    app.settings.defaults:
+        imap:
+            poll_enabled: '%env(bool:IMAP_POLL_ENABLED)%'
+            use_fixture: '%env(bool:IMAP_USE_FIXTURE)%'
+            poll_lookback: 20
+            host: '%env(IMAP_HOST)%'
+            port: '%env(int:IMAP_PORT)%'
+            user: '%env(IMAP_USER)%'
+            password: '%env(IMAP_PASSWORD)%'
+            folder_inbox: '%env(IMAP_FOLDER_INBOX)%'
+        webhook:
+            enabled: '%env(bool:WEBHOOK_INGEST_ENABLED)%'
+            secret: '%env(WEBHOOK_SECRET)%'
+            allowed_ips: '%env(default:empty_string:WEBHOOK_ALLOWED_IPS)%'
+        agent:
+            profile: '%env(AGENT_PROFILE)%'
+            binary: '%env(default:default_agent_binary:AGENT_BINARY)%'
+            codex_bin: '%env(default::OPENAI_CODEX_BIN)%'

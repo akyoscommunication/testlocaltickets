@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="fr">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>{% block title %}Assistant tickets{% endblock %}</title>
+        <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 128 128%22><text y=%221.2em%22 font-size=%2296%22>🎫</text></svg>">
+        {% block stylesheets %}
+            <link rel="stylesheet" href="{{ asset('styles/app.css') }}">
+        {% endblock %}
+        {% block javascripts %}
+            {% block importmap %}{{ importmap('app') }}{% endblock %}
+        {% endblock %}
+    </head>
+    <body class="min-h-screen bg-background text-foreground antialiased">
+        <header class="border-b bg-card shadow-sm">
+            <nav class="mx-auto max-w-6xl flex items-center gap-6 px-6 py-3 text-sm">
+                <a href="{{ path('dashboard_home') }}" class="font-semibold text-foreground">Assistant tickets</a>
+                <a href="{{ path('dashboard_home') }}" class="text-muted-foreground hover:text-foreground">Liste</a>
+                <a href="{{ path('prompt_catalog') }}" class="text-muted-foreground hover:text-foreground">Prompts</a>
+                <a href="{{ path('services_catalog') }}" class="text-muted-foreground hover:text-foreground">Services</a>
+                <a href="{{ path('automation_logs') }}" class="text-muted-foreground hover:text-foreground">Logs</a>
+                <a href="{{ path('app_settings') }}" class="text-muted-foreground hover:text-foreground">Paramètres</a>
+            </nav>
+        </header>
+        <main>
+            {% block body %}{% endblock %}
+        </main>
+    </body>
+</html>

@@ -1,0 +1,9 @@
+parameters:
+    input_sources:
+        imap:
+            enabled: '%env(bool:IMAP_POLL_ENABLED)%'
+            class: App\Input\ImapInputSource
+        webhook:
+            enabled: '%env(bool:WEBHOOK_INGEST_ENABLED)%'
+            class: App\Input\WebhookInputSource
+            path: /api/v1/tickets/ingest

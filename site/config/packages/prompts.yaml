@@ -1,0 +1,15 @@
+parameters:
+    prompts:
+        client_reply_style: '%kernel.project_dir%/prompts/_shared/client-reply-style.md'
+        triage:
+            version: 1
+            system: '%kernel.project_dir%/prompts/triage/system.md'
+            user: '%kernel.project_dir%/prompts/triage/user.md.twig'
+        code_analysis:
+            version: 1
+            system: '%kernel.project_dir%/prompts/code_analysis/system.md'
+            user: '%kernel.project_dir%/prompts/code_analysis/user.md.twig'
+        patch:
+            version: 1
+            system: '%kernel.project_dir%/prompts/patch/system.md'
+            user: '%kernel.project_dir%/prompts/patch/user.md.twig'

@@ -1,0 +1,9 @@
+Tu reprends l'analyse du ticket {{ ticket_number }}.
+
+Le dépôt est disponible à : {{ workspace_path }}
+Contexte complet : {{ context_pack_path }}
+Résultat triage : {{ triage_result_path }}
+
+{{ conversation_rules|default('Ne pas modifier hors périmètre du ticket.') }}
+
+Produis le JSON de sortie (phase code_analysis).

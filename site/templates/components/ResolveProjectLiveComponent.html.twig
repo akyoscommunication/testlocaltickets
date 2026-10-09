@@ -1,0 +1,18 @@
+<div{{ attributes }}>
+    {% if this.isVisible %}
+        <twig:Card class="mb-6 border-amber-200 bg-amber-50/80">
+            <twig:Card:Header>
+                <twig:Card:Title>Valider le repository</twig:Card:Title>
+                <twig:Card:Description>Résolution ambiguë ou échouée — choisissez le projet puis lancez le clone.</twig:Card:Description>
+            </twig:Card:Header>
+            <twig:Card:Content>
+                {{ form_start(form) }}
+                    {{ form_row(form.project_key) }}
+                    <twig:Button type="submit" class="mt-2" data-action="live#action" data-live-action-param="validateAndClone">
+                        Valider le repo et lancer le clone
+                    </twig:Button>
+                {{ form_end(form) }}
+            </twig:Card:Content>
+        </twig:Card>
+    {% endif %}
+</div>

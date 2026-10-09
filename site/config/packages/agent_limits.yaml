@@ -1,0 +1,3 @@
+parameters:
+    app.max_agent_loops_per_ticket: 10
+    app.http_probe_batch_max_urls: 10

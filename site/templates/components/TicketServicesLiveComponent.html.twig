@@ -1,0 +1,37 @@
+<div{{ attributes }}>
+    {% set executions = this.executions %}
+    {% set context = this.context %}
+
+    <h2 class="font-semibold mb-3">Services exécutés</h2>
+
+    {% if executions is empty and context is null %}
+        <p class="text-sm text-muted-foreground">Aucun service exécuté pour ce ticket.</p>
+    {% else %}
+        {% if context.summary_lines is defined and context.summary_lines|length > 0 %}
+            <div class="mb-4 rounded-md bg-muted p-3 text-sm">
+                <p class="font-medium mb-1">Résumé agrégé</p>
+                <pre class="whitespace-pre-wrap text-xs">{{ context.summary_lines|join("\n") }}</pre>
+            </div>
+        {% endif %}
+
+        <div class="space-y-3">
+            {% for exec in executions %}
+                <article class="rounded border p-3 text-sm">
+                    <div class="flex flex-wrap items-center gap-2 mb-1">
+                        <code class="font-semibold">{{ exec.service }}</code>
+                        {% if exec.ok %}
+                            <span class="text-xs text-green-700">OK</span>
+                        {% else %}
+                            <span class="text-xs text-red-700">Échec</span>
+                        {% endif %}
+                        <span class="text-xs text-muted-foreground">{{ exec.executed_at|default('') }}</span>
+                    </div>
+                    <p>{{ exec.summary }}</p>
+                    {% if exec.params is defined and exec.params|length > 0 %}
+                        <pre class="mt-2 text-xs bg-muted rounded p-2 overflow-x-auto">{{ exec.params|json_encode(constant('JSON_PRETTY_PRINT')) }}</pre>
+                    {% endif %}
+                </article>
+            {% endfor %}
+        </div>
+    {% endif %}
+</div>

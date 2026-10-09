@@ -1,0 +1,191 @@
+#!/usr/bin/env bash
+# Pont entre CodexCliRunner (Symfony) et OpenAI Codex CLI (`codex exec`).
+# Interface attendue : codex-ticket-run run --request PATH --prompt PATH --output PATH
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
+SCHEMAS_DIR="${PROJECT_DIR}/scripts/codex/schemas"
+CODEX_BIN="${OPENAI_CODEX_BIN:-codex}"
+
+usage() {
+    cat <<'EOF'
+Usage:
+  codex-ticket-run run --request FILE.json --prompt FILE.txt --output FILE.json
+
+Variables:
+  OPENAI_CODEX_BIN   Binaire OpenAI Codex (défaut: codex dans le PATH)
+  CODEX_SANDBOX      Mode sandbox codex exec (défaut: read-only pour triage, workspace-write pour code)
+EOF
+}
+
+if [[ "${1:-}" != "run" ]]; then
+    usage >&2
+    exit 1
+fi
+shift
+
+REQUEST="" PROMPT="" OUTPUT=""
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --request) REQUEST="$2"; shift 2 ;;
+        --prompt) PROMPT="$2"; shift 2 ;;
+        --output) OUTPUT="$2"; shift 2 ;;
+        -h|--help) usage; exit 0 ;;
+        *) echo "Argument inconnu : $1" >&2; exit 1 ;;
+    esac
+done
+
+if [[ -z "$REQUEST" || -z "$PROMPT" || -z "$OUTPUT" ]]; then
+    echo "Options --request, --prompt et --output sont obligatoires." >&2
+    exit 1
+fi
+
+if ! command -v "$CODEX_BIN" >/dev/null 2>&1; then
+    echo "Binaire « ${CODEX_BIN} » introuvable. Lance : ${PROJECT_DIR}/scripts/install-codex-cli.sh" >&2
+    exit 127
+fi
+
+if ! command -v jq >/dev/null 2>&1; then
+    echo "jq est requis (brew install jq)." >&2
+    exit 127
+fi
+
+PHASE="$(jq -r '.phase // empty' "$REQUEST")"
+SCHEMA="${SCHEMAS_DIR}/${PHASE}-result.schema.json"
+if [[ ! -f "$SCHEMA" ]]; then
+    echo "Schéma JSON introuvable pour la phase « ${PHASE} » (${SCHEMA})." >&2
+    exit 1
+fi
+
+TICKET_DIR="$(cd "$(dirname "$REQUEST")/.." && pwd)"
+WORKDIR="$TICKET_DIR"
+
+if [[ "$PHASE" == "code_analysis" ]]; then
+    WS_DIR="$(find "${TICKET_DIR}/code-workspaces" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | head -1 || true)"
+    if [[ -n "$WS_DIR" && -d "$WS_DIR" ]]; then
+        WORKDIR="$WS_DIR"
+    fi
+    SANDBOX="${CODEX_SANDBOX:-workspace-write}"
+else
+    SANDBOX="${CODEX_SANDBOX:-read-only}"
+fi
+
+# macOS : le modèle mktemp doit se terminer par XXXXXX (pas .json/.txt après).
+TMP_BASE="${TMPDIR:-/tmp}"
+TMP_BASE="${TMP_BASE%/}"
+TMP_OUT="$(mktemp "${TMP_BASE}/codex-out-XXXXXX")"
+INSTRUCTION_FILE="$(mktemp "${TMP_BASE}/codex-instruction-XXXXXX")"
+trap 'rm -f "$TMP_OUT" "${TMP_OUT}.json" "$INSTRUCTION_FILE"' EXIT
+
+{
+    cat "$PROMPT"
+    printf '\n\n---\n\n## Contexte structuré (request JSON)\n\n'
+    cat "$REQUEST"
+    if [[ "$PHASE" == "code_analysis" ]]; then
+        cat <<'TAIL'
+
+---
+
+## Consignes de sortie
+
+- Réponds avec un seul objet JSON conforme au schéma (enums stricts).
+- resolution, next_step, human_action : uniquement les valeurs listées dans le schéma JSON.
+- human_action = none si next_step = agent_loop, clone_repo ou close.
+- client_reply_draft : ton technicien poli mais courant (pas IA) ; internal_note pour l équipe.
+- Pas de markdown autour du JSON.
+TAIL
+    else
+        cat <<'TAIL'
+
+---
+
+## Consignes de sortie
+
+- Réponds avec un seul objet JSON conforme au schéma triage v2 (enums stricts).
+- service_request.params : toujours les 7 clés (url, purpose, urls, project_key, human_action, summary, phase) ; inutilisées = "" ou [] ou phase \"triage\".
+- summary : analyse de la demande + prochaine action ; internal_note : consignes équipe. Ne pas y mentionner sondes HTTP, service_request ni « pas besoin de… » (le JSON service_request suffit).
+- http_probe : seulement incident technique sur domaine identifié et services_context insuffisant. Sinon close_* / request_human_action sans justifier l absence de sonde dans le texte.
+- Après sondes GET OK sur page contact : request_human_action + test_form_submission si besoin.
+- project_detection obligatoire (project_key, domain, confidence, reason).
+- client_reply_draft : ton technicien poli mais courant (pas IA).
+- Pas de markdown autour du JSON.
+TAIL
+    fi
+if [[ -f "${PROJECT_DIR}/prompts/_shared/client-reply-style.md" ]]; then
+    printf '\n'
+    cat "${PROJECT_DIR}/prompts/_shared/client-reply-style.md"
+fi
+} > "$INSTRUCTION_FILE"
+
+INSTRUCTION="$(cat "$INSTRUCTION_FILE")"
+
+set +e
+"$CODEX_BIN" exec \
+    --skip-git-repo-check \
+    --sandbox "$SANDBOX" \
+    -C "$WORKDIR" \
+    --output-schema "$SCHEMA" \
+    -o "${TMP_OUT}.json" \
+    "$INSTRUCTION" \
+    2> "$(dirname "$OUTPUT")/codex-exec.stderr.log"
+STATUS=$?
+set -e
+
+if [[ $STATUS -ne 0 ]]; then
+    echo "codex exec a échoué (code ${STATUS}). Voir $(dirname "$OUTPUT")/codex-exec.stderr.log" >&2
+    exit $STATUS
+fi
+
+CODEX_OUT="${TMP_OUT}.json"
+if [[ ! -f "$CODEX_OUT" && -f "$TMP_OUT" ]]; then
+    CODEX_OUT="$TMP_OUT"
+fi
+
+if jq -e . "$CODEX_OUT" >/dev/null 2>&1; then
+    cp "$CODEX_OUT" "$OUTPUT"
+else
+    python3 - "$CODEX_OUT" "$OUTPUT" <<'PY' 2>/dev/null || cp "$CODEX_OUT" "$OUTPUT"
+import json, re, sys
+text = open(sys.argv[1]).read()
+for block in re.findall(r"```(?:json)?\s*([\s\S]*?)```", text, re.I):
+    try:
+        json.loads(block)
+        open(sys.argv[2], "w").write(block.strip())
+        sys.exit(0)
+    except json.JSONDecodeError:
+        pass
+start = text.find("{")
+end = text.rfind("}")
+if start >= 0 and end > start:
+    open(sys.argv[2], "w").write(text[start : end + 1])
+else:
+    open(sys.argv[2], "w").write(text)
+PY
+fi
+
+# Normaliser champs obligatoires si le modèle les a omis
+if [[ "$PHASE" == "code_analysis" ]]; then
+    jq --arg tn "$(jq -r '.ticket_number' "$REQUEST")" --arg ph "$PHASE" '
+      .schema_version //= "1"
+      | .ticket_number //= $tn
+      | .phase //= $ph
+      | .human_action //= "none"
+    ' "$OUTPUT" > "${OUTPUT}.tmp" && mv "${OUTPUT}.tmp" "$OUTPUT"
+    JQ_CHECK='.schema_version and .ticket_number and .phase and .resolution and .next_step'
+else
+    jq --arg tn "$(jq -r '.ticket_number' "$REQUEST")" --arg ph "$PHASE" '
+      .schema_version //= "2"
+      | .ticket_number //= $tn
+      | .phase //= $ph
+    ' "$OUTPUT" > "${OUTPUT}.tmp" && mv "${OUTPUT}.tmp" "$OUTPUT"
+    JQ_CHECK='.schema_version and .ticket_number and .phase and .resolution and .service_request'
+fi
+
+if ! jq -e "$JQ_CHECK" "$OUTPUT" >/dev/null; then
+    echo "Sortie JSON invalide ou incomplète pour la phase ${PHASE} : $OUTPUT" >&2
+    jq . "$OUTPUT" >&2 2>/dev/null || true
+    exit 1
+fi
+
+exit 0
